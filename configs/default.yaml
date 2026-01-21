@@ -1,0 +1,105 @@
+# MaiChart AI 配置文件
+
+# 数据配置
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  audio_dir: "data/audio"
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+
+# 音频特征配置
+audio:
+  sample_rate: 22050
+  hop_length: 512
+  n_mels: 128
+  n_fft: 2048
+  fmin: 20
+  fmax: 8000
+  # 时间分辨率：每个 token 对应的音频帧数
+  frames_per_token: 4
+
+# Tokenizer 配置
+tokenizer:
+  # 位置 tokens: 1-8 (A区), A1-A8, B1-B8, C, D1-D8, E1-E8
+  position_tokens: 33
+  # 动作 tokens: TAP, HOLD_START, HOLD_END, SLIDE, TOUCH, etc.
+  action_tokens: 20
+  # 时值 tokens: {1}, {2}, {4}, {8}, {16}, {32}
+  duration_tokens: 10
+  # 特殊 tokens: PAD, BOS, EOS, SEP, EACH
+  special_tokens: 10
+  # 最大序列长度
+  max_seq_length: 2048
+  # 内部时间网格 (1/192 分音符)
+  time_grid: 192
+
+# 模型配置
+model:
+  # 音频编码器
+  audio_encoder:
+    type: "transformer"
+    d_model: 256
+    n_heads: 8
+    n_layers: 3
+    dropout: 0.1
+  
+  # 谱面解码器
+  chart_decoder:
+    type: "transformer"
+    d_model: 256
+    n_heads: 8
+    n_layers: 4
+    dropout: 0.1
+  
+  # 输出头
+  output_heads:
+    position:
+      hidden_dim: 256
+    action:
+      hidden_dim: 256
+    duration:
+      hidden_dim: 128
+
+# 训练配置
+training:
+  batch_size: 4
+  learning_rate: 1e-4
+  warmup_steps: 1000
+  max_epochs: 100
+  gradient_accumulation_steps: 8
+  max_grad_norm: 1.0
+  
+  # 优化器
+  optimizer: "adamw"
+  weight_decay: 0.01
+  
+  # 学习率调度
+  scheduler: "cosine"
+  
+  # 早停
+  early_stopping:
+    patience: 10
+    min_delta: 0.001
+
+# 生成配置
+generation:
+  # 采样策略
+  strategy: "nucleus"  # greedy, beam, nucleus
+  temperature: 0.8
+  top_p: 0.9
+  top_k: 50
+  
+  # 后处理
+  post_process:
+    validate_slides: true
+    simplify_duration: true
+    check_playability: true
+
+# 日志配置
+logging:
+  level: "INFO"
+  save_dir: "logs"
+  use_wandb: false
+  wandb_project: "maichart-ai"

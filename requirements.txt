@@ -1,0 +1,35 @@
+# 音频处理
+librosa>=0.10.0
+soundfile>=0.12.1
+numpy>=1.24.0
+scipy>=1.10.0
+# madmom 需要编译，在 Windows 上可能有问题，如需使用请单独安装
+
+# 深度学习
+torch>=2.0.0
+transformers>=4.30.0
+einops>=0.6.1
+flash-attn>=2.0.0  # 可选，用于加速注意力计算
+
+# 数据处理
+pandas>=2.0.0
+tqdm>=4.65.0
+datasets>=2.12.0
+tokenizers>=0.13.0
+
+# 可视化
+matplotlib>=3.7.0
+seaborn>=0.12.0
+tensorboard>=2.13.0
+wandb>=0.15.0  # 可选，用于实验追踪
+
+# 工具
+pyyaml>=6.0
+hydra-core>=1.3.0
+python-dotenv>=1.0.0
+rich>=13.0.0
+
+# 开发
+pytest>=7.3.0
+black>=23.3.0
+isort>=5.12.0
