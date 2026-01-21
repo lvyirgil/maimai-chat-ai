@@ -7,6 +7,7 @@ GPU 训练启动脚本
 
 import torch
 import argparse
+import yaml
 from pathlib import Path
 from src.training.train import TrainingConfig, Trainer, main
 
@@ -39,6 +40,7 @@ def print_gpu_info():
 def main_gpu():
     """主函数"""
     parser = argparse.ArgumentParser(description="GPU 训练")
+    parser.add_argument("--config", type=str, help="配置文件路径 (yaml)")
     parser.add_argument("--batch-size", type=int, default=16, help="Batch size (默认: 16)")
     parser.add_argument("--lr", type=float, default=1e-4, help="学习率 (默认: 1e-4)")
     parser.add_argument("--epochs", type=int, default=100, help="训练轮数 (默认: 100)")
@@ -49,6 +51,19 @@ def main_gpu():
     
     args = parser.parse_args()
     
+    # 如果指定了配置文件，则从配置文件加载参数
+    if args.config and Path(args.config).exists():
+        print(f"载入配置文件: {args.config}")
+        with open(args.config, 'r', encoding='utf-8') as f:
+            config_data = yaml.safe_load(f)
+            # 这里简化处理，只覆盖几个关键参数
+            if 'training' in config_data:
+                args.batch_size = config_data['training'].get('batch_size', args.batch_size)
+                args.lr = config_data['training'].get('learning_rate', args.lr)
+                args.epochs = config_data['training'].get('max_epochs', args.epochs)
+            if 'data' in config_data:
+                args.data_dir = config_data['data'].get('processed_dir', args.data_dir)
+
     # 打印 GPU 信息
     print_gpu_info()
     
