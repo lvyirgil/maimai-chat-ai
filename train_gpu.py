@@ -41,6 +41,7 @@ def main_gpu():
     """主函数"""
     parser = argparse.ArgumentParser(description="GPU 训练")
     parser.add_argument("--config", type=str, help="配置文件路径 (yaml)")
+    parser.add_argument("--resume", type=str, help="恢复训练的检查点路径 (.pt)")
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size (默认: 8)")
     parser.add_argument("--lr", type=float, default=1e-4, help="学习率 (默认: 1e-4)")
     parser.add_argument("--epochs", type=int, default=100, help="训练轮数 (默认: 100)")
@@ -102,6 +103,9 @@ def main_gpu():
         '--save-dir', args.save_dir,
     ]
     
+    if args.resume:
+        sys.argv.extend(['--resume', args.resume])
+
     if args.use_wandb:
         sys.argv.append('--use-wandb')
     
