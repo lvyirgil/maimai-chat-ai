@@ -282,7 +282,10 @@ class Trainer:
         if self.val_dataset:
             print(f"验证集大小: {len(self.val_dataset)}")
         
-        for epoch in range(self.config.max_epochs):
+        # 从记录的 epoch 开始（如果是新训练，self.epoch 为 0）
+        start_epoch = self.epoch + 1 if self.epoch > 0 else 0
+        
+        for epoch in range(start_epoch, self.config.max_epochs):
             self.epoch = epoch
             
             # 训练
