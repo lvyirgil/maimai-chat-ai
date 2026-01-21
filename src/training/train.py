@@ -80,7 +80,7 @@ class Trainer:
         self.model = self.model.to(self.device)
         
         # 混合精度训练
-        self.scaler = torch.cuda.amp.GradScaler() if config.mixed_precision else None
+        self.scaler = torch.amp.GradScaler('cuda', enabled=config.mixed_precision)
         self.use_mixed_precision = config.mixed_precision and torch.cuda.is_available()
         
         # 优化器
@@ -147,20 +147,7 @@ class Trainer:
             chart_mask = torch.tensor(batch['attention_mask'], dtype=torch.float32).to(self.device)
             
             # 混合精度前向传播
-            if self.use_mixed_precision:
-                with torch.cuda.amp.autocast():
-                    output = self.model(
-                        audio_features=audio_features,
-                        chart_tokens=chart_tokens,
-                        audio_mask=audio_mask,
-                        chart_mask=chart_mask
-                    )
-                    loss = output['loss'] / self.config.gradient_accumulation_steps
-                
-                # 混合精度反向传播
-                self.scaler.scale(loss).backward()
-            else:
-                # 标准前向传播
+            with torch.amp.autocast('cuda', enabled=self.use_mixed_precision):
                 output = self.model(
                     audio_features=audio_features,
                     chart_tokens=chart_tokens,
@@ -168,6 +155,11 @@ class Trainer:
                     chart_mask=chart_mask
                 )
                 loss = output['loss'] / self.config.gradient_accumulation_steps
+            
+            # 反向传播
+            if self.use_mixed_precision:
+                self.scaler.scale(loss).backward()
+            else:
                 loss.backward()
             
             # 梯度累积
@@ -215,6 +207,7 @@ class Trainer:
         return total_loss / max(num_batches, 1)
     
     @torch.no_grad()
+    @torch.no_grad()
     def validate(self) -> float:
         """验证"""
         if self.val_dataset is None or len(self.val_dataset) == 0:
@@ -235,12 +228,13 @@ class Trainer:
             chart_tokens = torch.tensor(batch['chart_tokens'], dtype=torch.long).to(self.device)
             chart_mask = torch.tensor(batch['attention_mask'], dtype=torch.float32).to(self.device)
             
-            output = self.model(
-                audio_features=audio_features,
-                chart_tokens=chart_tokens,
-                audio_mask=audio_mask,
-                chart_mask=chart_mask
-            )
+            with torch.amp.autocast('cuda', enabled=self.use_mixed_precision):
+                output = self.model(
+                    audio_features=audio_features,
+                    chart_tokens=chart_tokens,
+                    audio_mask=audio_mask,
+                    chart_mask=chart_mask
+                )
             
             total_loss += output['loss'].item()
             num_batches += 1

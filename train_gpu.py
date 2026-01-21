@@ -41,7 +41,7 @@ def main_gpu():
     """主函数"""
     parser = argparse.ArgumentParser(description="GPU 训练")
     parser.add_argument("--config", type=str, help="配置文件路径 (yaml)")
-    parser.add_argument("--batch-size", type=int, default=16, help="Batch size (默认: 16)")
+    parser.add_argument("--batch-size", type=int, default=8, help="Batch size (默认: 8)")
     parser.add_argument("--lr", type=float, default=1e-4, help="学习率 (默认: 1e-4)")
     parser.add_argument("--epochs", type=int, default=100, help="训练轮数 (默认: 100)")
     parser.add_argument("--data-dir", default="data/processed", help="数据目录")
@@ -77,7 +77,7 @@ def main_gpu():
         device="cuda" if torch.cuda.is_available() else "cpu",
         mixed_precision=torch.cuda.is_available() and not args.no_mixed_precision,
         use_wandb=args.use_wandb,
-        gradient_accumulation_steps=2,  # GPU 减少梯度累积
+        gradient_accumulation_steps=4,  # 增加积累步数以节省显存
     )
     
     print("训练配置:")
