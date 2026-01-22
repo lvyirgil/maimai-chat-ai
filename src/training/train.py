@@ -80,8 +80,8 @@ class Trainer:
         self.model = self.model.to(self.device)
         
         # 混合精度训练
-        self.scaler = torch.amp.GradScaler('cuda', enabled=config.mixed_precision)
-        self.use_mixed_precision = config.mixed_precision and torch.cuda.is_available()
+        self.scaler = torch.amp.GradScaler(self.device.type, enabled=config.mixed_precision and self.device.type == 'cuda')
+        self.use_mixed_precision = config.mixed_precision and self.device.type == 'cuda'
         
         # 优化器
         self.optimizer = optim.AdamW(
@@ -147,7 +147,7 @@ class Trainer:
             chart_mask = torch.tensor(batch['attention_mask'], dtype=torch.float32).to(self.device)
             
             # 混合精度前向传播
-            with torch.amp.autocast('cuda', enabled=self.use_mixed_precision):
+            with torch.amp.autocast(self.device.type, enabled=self.use_mixed_precision):
                 output = self.model(
                     audio_features=audio_features,
                     chart_tokens=chart_tokens,
@@ -228,7 +228,7 @@ class Trainer:
             chart_tokens = torch.tensor(batch['chart_tokens'], dtype=torch.long).to(self.device)
             chart_mask = torch.tensor(batch['attention_mask'], dtype=torch.float32).to(self.device)
             
-            with torch.amp.autocast('cuda', enabled=self.use_mixed_precision):
+            with torch.amp.autocast(self.device.type, enabled=self.use_mixed_precision):
                 output = self.model(
                     audio_features=audio_features,
                     chart_tokens=chart_tokens,
@@ -240,7 +240,7 @@ class Trainer:
             num_batches += 1
             
             # 清空显存缓存
-            if self.device == 'cuda':
+            if self.device.type == 'cuda':
                 torch.cuda.empty_cache()
         
         return total_loss / max(num_batches, 1)
@@ -282,10 +282,7 @@ class Trainer:
         if self.val_dataset:
             print(f"验证集大小: {len(self.val_dataset)}")
         
-        # 从记录的 epoch 开始（如果是新训练，self.epoch 为 0）
-        start_epoch = self.epoch + 1 if self.epoch > 0 else 0
-        
-        for epoch in range(start_epoch, self.config.max_epochs):
+        for epoch in range(self.config.max_epochs):
             self.epoch = epoch
             
             # 训练
