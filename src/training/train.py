@@ -79,9 +79,9 @@ class Trainer:
         self.device = torch.device(config.device)
         self.model = self.model.to(self.device)
         
-        # 混合精度训练
-        self.scaler = torch.amp.GradScaler(self.device.type, enabled=config.mixed_precision and self.device.type == 'cuda')
+        # 混合精度训练：仅在 CUDA 上启用
         self.use_mixed_precision = config.mixed_precision and self.device.type == 'cuda'
+        self.scaler = torch.amp.GradScaler('cuda', enabled=self.use_mixed_precision)
         
         # 优化器
         self.optimizer = optim.AdamW(
@@ -147,7 +147,7 @@ class Trainer:
             chart_mask = torch.tensor(batch['attention_mask'], dtype=torch.float32).to(self.device)
             
             # 混合精度前向传播
-            with torch.amp.autocast(self.device.type, enabled=self.use_mixed_precision):
+            with torch.amp.autocast(device_type=self.device.type, enabled=self.use_mixed_precision):
                 output = self.model(
                     audio_features=audio_features,
                     chart_tokens=chart_tokens,
@@ -228,7 +228,7 @@ class Trainer:
             chart_tokens = torch.tensor(batch['chart_tokens'], dtype=torch.long).to(self.device)
             chart_mask = torch.tensor(batch['attention_mask'], dtype=torch.float32).to(self.device)
             
-            with torch.amp.autocast(self.device.type, enabled=self.use_mixed_precision):
+            with torch.amp.autocast(device_type=self.device.type, enabled=self.use_mixed_precision):
                 output = self.model(
                     audio_features=audio_features,
                     chart_tokens=chart_tokens,

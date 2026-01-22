@@ -9,7 +9,7 @@ scipy>=1.10.0
 torch>=2.0.0
 transformers>=4.30.0
 einops>=0.6.1
-# flash-attn>=2.0.0  # 可选，需要 GPU 才能安装，已注释以兼容 CPU
+# flash-attn>=2.0.0  # 可选，在没有 GPU 的环境下建议注释掉
 
 # 数据处理
 pandas>=2.0.0
