@@ -6,6 +6,7 @@ import os
 import time
 import json
 import argparse
+import sys
 from pathlib import Path
 from typing import Dict, Optional, Any
 from dataclasses import dataclass, asdict
@@ -99,8 +100,21 @@ class Trainer:
         self.best_val_loss = float('inf')
         self.patience_counter = 0
         
-        # 保存目录
-        self.save_dir = Path(config.save_dir)
+        # 检测是否在 Colab 环境
+        self.in_colab = 'google.colab' in sys.modules
+        
+        # 保存目录优先级：网盘 > 本地
+        if self.in_colab:
+            drive_path = Path("/content/drive/MyDrive/maimai/models")
+            if Path("/content/drive").exists():
+                self.save_dir = drive_path
+                print(f"检测到网盘已挂载，保存路径设为: {self.save_dir}")
+            else:
+                self.save_dir = Path(config.save_dir)
+                print(f"网盘未挂载，将保存到本地并在每轮后触发下载: {self.save_dir}")
+        else:
+            self.save_dir = Path(config.save_dir)
+            
         self.save_dir.mkdir(parents=True, exist_ok=True)
         
         # WandB
@@ -261,6 +275,16 @@ class Trainer:
         path = self.save_dir / f"{name}.pt"
         torch.save(checkpoint, path)
         print(f"检查点已保存到 {path}")
+        
+        # Colab 环境触发下载
+        if self.in_colab:
+            try:
+                from google.colab import files
+                files.download(str(path))
+                print(f"已触发下载: {path.name}")
+            except Exception as e:
+                # 某些环境下导出可能失败，静默处理或仅打印
+                pass
     
     def load_checkpoint(self, path: str):
         """加载检查点"""
@@ -282,7 +306,10 @@ class Trainer:
         if self.val_dataset:
             print(f"验证集大小: {len(self.val_dataset)}")
         
-        for epoch in range(self.config.max_epochs):
+        # 从加载的 epoch 开始，如果是新训练则从 0 开始
+        start_epoch = self.epoch + 1 if self.global_step > 0 else 0
+        
+        for epoch in range(start_epoch, self.config.max_epochs):
             self.epoch = epoch
             
             # 训练
@@ -302,7 +329,7 @@ class Trainer:
                     'val/loss': val_loss
                 })
             
-            # 保存最佳模型
+            # 保存最佳模型 (包含优化器状态)
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
                 self.save_checkpoint("best")
@@ -310,9 +337,8 @@ class Trainer:
             else:
                 self.patience_counter += 1
             
-            # 定期保存
-            if (epoch + 1) % self.config.save_every == 0:
-                self.save_checkpoint(f"epoch_{epoch}")
+            # 每一轮训练完都输出 epoch 检查点
+            self.save_checkpoint(f"epoch_{epoch}")
             
             # 早停
             if self.patience_counter >= self.config.early_stopping_patience:
