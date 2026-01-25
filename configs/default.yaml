@@ -65,7 +65,7 @@ model:
 # 训练配置
 training:
   batch_size: 4
-  learning_rate: 5e-5
+  learning_rate: 2e-5
   warmup_steps: 1000
   max_epochs: 200
   gradient_accumulation_steps: 8
