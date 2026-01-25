@@ -297,7 +297,15 @@ class Trainer:
         self.global_step = checkpoint['global_step']
         self.best_val_loss = checkpoint['best_val_loss']
         
-        print(f"从 {path} 加载检查点 (epoch {self.epoch})")
+        # 强制更新学习率为配置值（解决从旧检查点恢复时 LR 被覆盖的问题）
+        for param_group in self.optimizer.param_groups:
+            param_group['lr'] = self.config.learning_rate
+        
+        # 如果有调度器，也需要同步调度器的初始 LR 基础值
+        if hasattr(self.scheduler, 'base_lrs'):
+            self.scheduler.base_lrs = [self.config.learning_rate] * len(self.optimizer.param_groups)
+            
+        print(f"从 {path} 加载检查点 (epoch {self.epoch})，强制同步学习率为: {self.config.learning_rate}")
     
     def train(self):
         """完整训练流程"""
