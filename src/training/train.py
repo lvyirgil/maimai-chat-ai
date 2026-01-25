@@ -297,9 +297,16 @@ class Trainer:
         self.global_step = checkpoint['global_step']
         self.best_val_loss = checkpoint['best_val_loss']
         
-        # 强制更新学习率为配置值（解决从旧检查点恢复时 LR 被覆盖的问题）
+        # 强制更新学习率为配置值
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = self.config.learning_rate
+        
+        # 检测 Loss 是否发生了量级变化（例如 SEP 权重调整后）
+        # 如果当前 best_val_loss 远小于 0.3 (针对调整后的正常范围)，则重置它
+        if self.best_val_loss < 0.25:
+             print(f"检测到历史最佳 Loss ({self.best_val_loss:.4f}) 过低，可能属于旧权重标准。")
+             print("正在重置 best_val_loss 以匹配新的微调阶段...")
+             self.best_val_loss = float('inf')
         
         # 如果有调度器，也需要同步调度器的初始 LR 基础值
         if hasattr(self.scheduler, 'base_lrs'):
