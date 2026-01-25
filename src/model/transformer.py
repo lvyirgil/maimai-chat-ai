@@ -310,9 +310,18 @@ class MaiChartModel(nn.Module):
         # 计算损失
         loss = None
         if decoder_target is not None:
+            # 解决 SEP token 过度主导损失的问题
+            # 将 SEP (ID 3) 的权重调低，让模型更关注音符生成的准确性
+            weights = torch.ones(self.config.vocab_size, device=logits.device)
+            weights[3] = 0.1  # SEP 降权到 0.1
+            
+            # 你也可以选择给音符 token (如 TAP=100) 略微增权
+            # weights[100:] *= 1.5 
+            
             loss = F.cross_entropy(
                 logits.reshape(-1, self.config.vocab_size),
                 decoder_target.reshape(-1),
+                weight=weights,
                 ignore_index=0  # 忽略 PAD
             )
         
