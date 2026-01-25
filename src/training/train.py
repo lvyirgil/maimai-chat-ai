@@ -38,6 +38,7 @@ class TrainingConfig:
     learning_rate: float = 5e-5  # 从 1e-4 降低到 5e-5 以适应权重调整后的微调阶段
     warmup_steps: int = 1000
     max_epochs: int = 200  # 增加最大轮数以支持更长时间的微调
+    gradient_accumulation_steps: int = 2 # 梯度累积步数
     max_grad_norm: float = 1.0
     
     # 优化器
