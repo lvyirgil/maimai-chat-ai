@@ -35,7 +35,7 @@ class TrainingConfig:
     
     # 训练参数
     batch_size: int = 16  # GPU 训练，增加 batch size
-    learning_rate: float = 5e-5  # 从 1e-4 降低到 5e-5 以适应权重调整后的微调阶段
+    learning_rate: float = 2e-5  # 进一步降低学习率以突破 0.65 的 Loss 震荡瓶颈
     warmup_steps: int = 1000
     max_epochs: int = 200  # 增加最大轮数以支持更长时间的微调
     gradient_accumulation_steps: int = 2 # 梯度累积步数
